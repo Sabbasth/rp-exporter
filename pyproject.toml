@@ -1,0 +1,12 @@
+[tool.black]
+line-length = 120
+
+[tool.pylint]
+disable = [
+    "missing-docstring",
+    "invalid-name",
+    "logging-fstring-interpolation",
+    "broad-exception-caught",
+    "line-too-long",
+    "too-few-public-methods"
+]
