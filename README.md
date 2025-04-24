@@ -148,3 +148,35 @@ make apply
 # Generate test topics inside the cluster
 make generate-topics
 ```
+
+## Project Evolution
+
+This section documents the evolutionary steps that led to the current state of the project, presented as a series of requests and implementations.
+
+### Implementation Steps
+
+| Original Request (French) | English Translation | Implementation |
+|---------------------------|---------------------|----------------|
+| "kubectl a été ajouté à l'environnement, tu peux maintenant appliquer les changements." | "kubectl has been added to the environment, you can now apply the changes." | Applied the Kubernetes configurations to deploy the application stack. |
+| "modifie le déploiement actuel pour qu'il utilise le namespace rp-exporter au lieu de celui par défaut, et assure-toi qu'il n'y ai pas de ressources inutiles qui subsistent." | "Modify the current deployment to use the rp-exporter namespace instead of the default one, and make sure there are no unnecessary resources remaining." | Created a namespace configuration and updated all resources to use the rp-exporter namespace. Cleaned up resources from the default namespace. |
+| "le cluster kafka crash peux-tu fixer le problème" | "The Kafka cluster is crashing, can you fix the problem?" | Fixed Kafka configuration by correcting listeners and adding the necessary format settings. Modified the storage formatting process during startup. |
+| "il y a également une erreur avec la console redpanda, peux-tu la fixer." | "There's also an error with the Redpanda console, can you fix it." | Fixed Redpanda Console configuration to properly connect to Kafka and disabled the admin API. |
+| "l'accès aux services web tel qu'écrit dans la documentation ne fonctionnenent pas. peux-tu corriger soit la configuration de port forwarding, soit la documentation pour qu'on puisse y accéder depuis l'hôte." | "Access to web services as written in the documentation doesn't work. Can you fix either the port forwarding configuration or the documentation so we can access them from the host." | Implemented NodePort services for all web interfaces and updated port forwarding commands in the Makefile. Added clear documentation on how to access the services. |
+| "Le script de génération renvoie l'erreur suivante: \"n error occurred: NodeNotReadyError: Connection failed to 0\" corrige-la" | "The generation script returns the following error: \"An error occurred: NodeNotReadyError: Connection failed to 0\" fix it" | Improved Kafka client configuration with proper timeouts and connection settings. Added connection testing and robust error handling. |
+| "Fais du script une image qu'on peut lancer dans le cluster kube via le makefile. Corrige le makefile et la documentation en conséquance. vérifie que les fichiers soient organisés de manière cohérente suite à ces changements." | "Make the script into an image that can be run in the Kubernetes cluster via the Makefile. Update the Makefile and documentation accordingly. Verify that the files are organized coherently after these changes." | Created a Docker image for the topic generator and a Kubernetes Job. Updated the Makefile to build and deploy it. Streamlined documentation to explain the approach. |
+| "Enlève l'option de pouvoir lancer le script localement pour garder uniquement le job kubernetes." | "Remove the option to run the script locally to keep only the Kubernetes job." | Simplified the implementation by removing local script execution option. Updated documentation and Makefile to reflect this change. |
+| "the rp-exporter app reports an error, fix it and redeploy only this service" | (Already in English) | Fixed the rp-exporter API integration issues by handling different API response formats and improving error handling. Redeployed only the fixed service. |
+| "Ajoute une section à la fin du readme avec l'ensemble des demandes que je t'ai faites, celle-ci incluse, ainsi que leur traduction en anglais le cas échéant." | "Add a section at the end of the readme with all the requests I've made to you, including this one, as well as their English translation if applicable." | Added this documentation section to track the project's evolution. |
+
+### Architecture Overview
+
+The project evolved from a simple deployment to a robust, namespace-isolated Kubernetes application with:
+
+1. A 3-node Kafka cluster with proper listener configuration
+2. Redpanda Console for Kafka management
+3. Prometheus for metrics collection
+4. Grafana for visualization
+5. A custom rp-exporter service to collect and expose Kafka topic size metrics
+6. A containerized topic generator running as a Kubernetes Job
+
+Each component now runs in a dedicated namespace with proper resource management and streamlined access via both port forwarding and NodePort services.
