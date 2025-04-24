@@ -47,6 +47,9 @@ make test
 
 # Generate test topics and data
 make generate-topics
+
+# Restart a specific service
+make restart-service SERVICE=rp-exporter
 ```
 
 Or using Docker Compose directly:
