@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - storage.yaml
-  - broker.yaml
+  - kafka.yaml
   - redpanda-console.yaml
   - rp-exporter.yaml
   - prometheus.yaml

@@ -40,7 +40,8 @@ spec:
         - '--web.enable-lifecycle'
         volumeMounts:
         - name: config
-          mountPath: /etc/prometheus
+          mountPath: /etc/prometheus/prometheus.yml
+          subPath: prometheus.yml
       volumes:
       - name: config
         configMap:

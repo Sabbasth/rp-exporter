@@ -5,7 +5,7 @@ metadata:
 data:
   config.yaml: |
     kafka:
-      brokers: ["broker:9092"]
+      brokers: ["kafka-0.kafka-headless:9092", "kafka-1.kafka-headless:9092", "kafka-2.kafka-headless:9092"]
     redpanda:
       adminApi:
         enabled: true
