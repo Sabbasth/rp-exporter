@@ -1,37 +1,31 @@
-# pylint: disable=missing-docstring
+"""
+Unit tests for the RedpandaConsoleTopicCollector class.
+"""
 import unittest
 from unittest.mock import patch, MagicMock
-import sys
-import os
 
-# Add the src directory to the path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
-
-# fmt: off
-from app import (RedpandaConsoleTopicCollector)  # pylint: disable=import-error,wrong-import-position
-# fmt: on
+# Import from the package
+from src.app import RedpandaConsoleTopicCollector
 
 
 class TestRedpandaConsoleTopicCollector(unittest.TestCase):
-    @patch("app.requests.get")
+    """Test cases for the RedpandaConsoleTopicCollector class."""
+
+    @patch("src.app.requests.get")
     def test_collect_metrics(self, mock_get):
-        # Mock the responses
+        """Test that metrics are collected correctly from the API response."""
+        # Mock the response for topic list
         topics_response = MagicMock()
         topics_response.status_code = 200
-        topics_response.json.return_value = [{"topicName": "test-topic"}]
+        topics_response.json.return_value = {"topics": [
+            {
+                "topicName": "test-topic",
+                "logDirSummary": {"totalSizeBytes": 3072}
+            }
+        ]}
 
-        topic_details_response = MagicMock()
-        topic_details_response.status_code = 200
-        topic_details_response.json.return_value = {
-            "topicName": "test-topic",
-            "partitions": [
-                {"id": 0, "logDirSummary": {"totalSizeBytes": 1024}},
-                {"id": 1, "logDirSummary": {"totalSizeBytes": 2048}},
-            ],
-        }
-
-        # Configure the mock to return different responses
-        mock_get.side_effect = [topics_response, topic_details_response]
+        # Configure the mock to return the response
+        mock_get.return_value = topics_response
 
         # Create collector and run metrics collection
         collector = RedpandaConsoleTopicCollector("http://localhost:8080")
@@ -42,18 +36,8 @@ class TestRedpandaConsoleTopicCollector(unittest.TestCase):
         collector.collect_metrics()
 
         # Check that the metrics were updated correctly
-        calls = collector.topic_disk_usage.labels.call_args_list
-        self.assertEqual(len(calls), 2)
-
-        # Check first partition
-        _, kwargs = calls[0]
-        self.assertEqual(kwargs, {"topic": "test-topic", "partition": "0"})
-        collector.topic_disk_usage.labels().set.assert_any_call(1024)
-
-        # Check second partition
-        _, kwargs = calls[1]
-        self.assertEqual(kwargs, {"topic": "test-topic", "partition": "1"})
-        collector.topic_disk_usage.labels().set.assert_any_call(2048)
+        collector.topic_disk_usage.labels.assert_called_once_with(topic="test-topic")
+        collector.topic_disk_usage.labels().set.assert_called_once_with(3072)
 
 
 if __name__ == "__main__":

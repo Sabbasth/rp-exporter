@@ -53,3 +53,10 @@ venv.bak/
 
 # Logs
 *.log
+
+# Temporary files
+tmp*
+temp*
+
+# OS specific files
+.DS_Store
