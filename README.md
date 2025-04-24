@@ -20,7 +20,7 @@ python src/app.py --console-url http://redpanda-console:8080 --port 8000
 
 ## Test Environment
 
-This repository includes deployment configurations for both Kubernetes and Docker Compose to run the exporter with Redpanda Console, Prometheus, and Grafana.
+This repository includes deployment configurations for Kubernetes to run the exporter with Redpanda Console, Prometheus, and Grafana locally.
 
 ### Environment Variables
 
@@ -31,9 +31,9 @@ export REDPANDA_BROKERS=your-redpanda-host:9092
 export REDPANDA_ADMIN_API_URLS=http://your-redpanda-host:9644
 ```
 
-### Running on Kubernetes (Default)
+### Running on Kubernetes
 
-By default, the Makefile is configured to deploy to a local Kubernetes cluster (Minikube, Kind, or Docker Desktop).
+The application is designed to run on a local Kubernetes cluster (Minikube, Kind, or Docker Desktop).
 
 #### Prerequisites
 
@@ -41,7 +41,7 @@ By default, the Makefile is configured to deploy to a local Kubernetes cluster (
 - kubectl configured to communicate with your cluster
 - Docker installed
 
-#### Starting on Kubernetes
+#### Starting the Environment
 
 ```bash
 # Build image and deploy to Kubernetes
@@ -51,42 +51,21 @@ make run
 make build
 
 # Apply Kubernetes manifests
-make k8s-apply
+make apply
 
 # Forward ports to access services locally
-make k8s-port-forward
+make port-forward
 
 # Restart a specific service
 make restart-service SERVICE=rp-exporter
 ```
 
-#### Stopping the Kubernetes Environment
+#### Stopping the Environment
 
 ```bash
 make down
 # or
-make k8s-delete
-```
-
-### Running with Docker Compose
-
-You can switch to Docker Compose mode by setting the `DOCKER=1` environment variable.
-
-```bash
-# Start with Docker Compose
-make run DOCKER=1
-
-# Stop Docker Compose environment
-make down DOCKER=1
-
-# Restart a specific service
-make restart-service SERVICE=rp-exporter DOCKER=1
-```
-
-Or using Docker Compose directly:
-
-```bash
-docker-compose up -d
+make delete
 ```
 
 ### Generating Test Data
@@ -115,7 +94,7 @@ python tests/generate_test_topics.py
 
 ### Available Services
 
-When port forwarding is set up with `make k8s-port-forward` or when running Docker Compose, the following services are available:
+When port forwarding is set up with `make port-forward`, the following services are available:
 
 - Redpanda Console: [http://localhost:8080](http://localhost:8080)
 - Prometheus: [http://localhost:9090](http://localhost:9090)
@@ -127,7 +106,6 @@ When port forwarding is set up with `make k8s-port-forward` or when running Dock
 
 The Makefile supports the following options:
 
-- `DOCKER=1` - Use Docker Compose instead of Kubernetes
 - `SERVICE=name` - Specify service name for restart operations
 - `NAMESPACE=name` - Kubernetes namespace (default: rp-exporter)
 
