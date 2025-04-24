@@ -1,3 +1,4 @@
+SERVICE ?= none
 .PHONY: run build test clean down generate-topics restart-service
 
 # Default target
