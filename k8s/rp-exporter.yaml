@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rp-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rp-exporter
+  template:
+    metadata:
+      labels:
+        app: rp-exporter
+    spec:
+      containers:
+      - name: rp-exporter
+        image: rp-exporter:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+        args:
+        - "--console-url"
+        - "http://redpanda-console:8080"
+        - "--port"
+        - "8000"
+        - "--interval"
+        - "30"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rp-exporter
+spec:
+  selector:
+    app: rp-exporter
+  ports:
+  - name: metrics
+    port: 8000
+    targetPort: 8000
