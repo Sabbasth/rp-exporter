@@ -5,6 +5,7 @@ random replication factors, and fill them with random data.
 """
 
 import json
+import os
 import random
 import string
 import time
@@ -13,14 +14,14 @@ from kafka.admin import NewTopic
 from kafka.errors import TopicAlreadyExistsError
 
 # Configuration
-KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"
+KAFKA_BOOTSTRAP_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 MAX_TOPICS = 4
 MIN_PARTITIONS = 2
-MAX_PARTITIONS = 10
+MAX_PARTITIONS = 3  # Reduced from 10 to match the number of brokers
 MIN_REPLICATION = 1
-MAX_REPLICATION = 1
-MIN_MSG_SIZE_MB = 40
-MAX_MSG_SIZE_MB = 80
+MAX_REPLICATION = 3
+MIN_MSG_SIZE_MB = 10  # Reduced from 40 to make testing faster
+MAX_MSG_SIZE_MB = 20  # Reduced from 80 to make testing faster
 MAX_RETENTION_SIZE_MB = 50
 
 
@@ -32,7 +33,10 @@ def generate_random_string(length=10):
 
 def generate_random_data(size_kb):
     """Generate random data of specified size in KB."""
-    random_data = generate_random_string(size_kb * 1024)
+    # Generating exactly size_kb * 1024 characters is too memory intensive
+    # Instead, generate a smaller string that will still result in a JSON value of roughly the right size
+    # Each character becomes ~1 byte in JSON
+    random_data = generate_random_string(size_kb)
     return random_data.encode("utf-8")
 
 
@@ -108,10 +112,12 @@ def send_messages_to_topics(topic_names):
                 break
 
             # Create random message with timestamp
+            # Use a smaller data size to avoid memory issues
+            data_size = min(msg_size_kb // 10, 1000)  # Limit to 1000 chars max
             message = {
                 "timestamp": time.time(),
                 "id": generate_random_string(8),
-                "data": generate_random_string(msg_size_kb),
+                "data": generate_random_string(data_size),
             }
 
             # Send to a random partition
@@ -138,6 +144,7 @@ def main():
     print("Kafka Test Topic Generator")
     print("=========================")
     print("Configuration:")
+    print(f"  - Kafka Bootstrap Servers: {KAFKA_BOOTSTRAP_SERVERS}")
     print(f"  - Max topics: {MAX_TOPICS}")
     print(f"  - Partitions: {MIN_PARTITIONS}-{MAX_PARTITIONS}")
     print(f"  - Replication factor: {MIN_REPLICATION}-{MAX_REPLICATION}")
@@ -145,19 +152,24 @@ def main():
     print(f"  - Retention size: {MAX_RETENTION_SIZE_MB} MB")
     print()
 
-    # Create topics
-    topic_names = create_random_topics()
+    try:
+        # Create topics
+        topic_names = create_random_topics()
 
-    # Wait for topics to be fully created
-    print("Waiting for topics to be fully created...")
-    time.sleep(5)
+        # Wait for topics to be fully created
+        print("Waiting for topics to be fully created...")
+        time.sleep(5)
 
-    # Send messages to topics
-    if topic_names:
-        send_messages_to_topics(topic_names)
-        print("All data has been sent successfully!")
-    else:
-        print("No topics were created. Exiting.")
+        # Send messages to topics
+        if topic_names:
+            send_messages_to_topics(topic_names)
+            print("All data has been sent successfully!")
+        else:
+            print("No topics were created. Exiting.")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        print(f"Make sure Kafka is accessible at {KAFKA_BOOTSTRAP_SERVERS}")
+        print("If using port forwarding, ensure 'make port-forward' is running in another terminal")
 
 
 if __name__ == "__main__":

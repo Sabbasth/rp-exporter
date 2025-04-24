@@ -73,7 +73,9 @@ test:
 
 # Generate test topics with random data
 generate-topics:
-	python tests/generate_test_topics.py
+	@echo "Generating test topics..."
+	@echo "Make sure port forwarding is running in another terminal with 'make port-forward'"
+	KAFKA_BOOTSTRAP_SERVERS=localhost:9092 python tests/generate_test_topics.py
 
 # Install dependencies
 install:
