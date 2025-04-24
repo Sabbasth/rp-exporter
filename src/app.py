@@ -7,8 +7,6 @@ import time
 import requests
 from prometheus_client import start_http_server, Gauge
 
-# from prometheus_client.core import REGISTRY
-
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("redpanda-exporter")
 
@@ -17,44 +15,47 @@ class RedpandaConsoleTopicCollector:
     def __init__(self, redpanda_console_url):
         self.redpanda_console_url = redpanda_console_url
         self.topic_disk_usage = Gauge(
-            "redpanda_topic_disk_usage_bytes", "Disk usage in bytes per topic", ["topic", "partition"]
+            "redpanda_topic_disk_usage_bytes", "Disk usage in bytes per topic", ["topic"]
         )
 
     def collect_metrics(self):
         try:
-            # Fetch topic list
+            # Fetch topic list with data
             topics_response = requests.get(f"{self.redpanda_console_url}/api/topics", timeout=10)
             if topics_response.status_code != 200:
                 logger.error(f"Failed to fetch topics: {topics_response.status_code}")
                 return
 
-            topics = topics_response.json()
-            # For each topic, get partitions and their sizes
+            # Parse the response
+            response_data = topics_response.json()
+            
+            # Check if response is a dictionary with 'topics' key
+            if isinstance(response_data, dict) and 'topics' in response_data:
+                topics = response_data['topics']
+            else:
+                # Assume the response is a list of topics directly
+                topics = response_data
+
+            # For each topic, get partition sizes
             for topic in topics:
+                # Skip if not a dictionary or doesn't have a topic name
+                if not isinstance(topic, dict):
+                    logger.warning(f"Unexpected topic format: {topic}")
+                    continue
+                
                 topic_name = topic.get("topicName")
                 if not topic_name:
+                    logger.warning("Topic without a name found, skipping")
                     continue
 
-                # Get topic details including partition info
-                topic_response = requests.get(f"{self.redpanda_console_url}/api/topics/{topic_name}", timeout=10)
-                if topic_response.status_code != 200:
-                    logger.error(f"Failed to fetch details for topic {topic_name}: {topic_response.status_code}")
-                    continue
-
-                topic_details = topic_response.json()
-
-                # Extract partition sizes
-                partitions = topic_details.get("partitions", [])
-                for partition in partitions:
-                    partition_id = partition.get("id")
-
-                    # Get partition size in bytes - calculate from logDirSizes if available
-                    size_bytes = 0
-                    if "logDirSummary" in partition and "totalSizeBytes" in partition["logDirSummary"]:
-                        size_bytes = partition["logDirSummary"]["totalSizeBytes"]
-
-                    # Update the metric
-                    self.topic_disk_usage.labels(topic=topic_name, partition=str(partition_id)).set(size_bytes)
+                # Get total size - directly from the topic object if available
+                size_bytes = 0
+                if "logDirSummary" in topic and "totalSizeBytes" in topic["logDirSummary"]:
+                    size_bytes = topic["logDirSummary"]["totalSizeBytes"]
+                    
+                # Update the metric for the whole topic
+                self.topic_disk_usage.labels(topic=topic_name).set(size_bytes)
+                logger.info(f"Set metric for topic {topic_name}: {size_bytes} bytes")
 
             logger.info("Metrics collected successfully")
         except Exception as e:
