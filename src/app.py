@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+"""
+Redpanda Console Prometheus Exporter.
+
+This module provides a Prometheus exporter for Redpanda disk usage metrics.
+It collects information from the Redpanda Console API and exposes metrics
+for monitoring in Prometheus.
+"""
 
 import argparse
 import logging
@@ -7,21 +13,39 @@ import time
 import requests
 from prometheus_client import start_http_server, Gauge
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger("redpanda-exporter")
 
 
 class RedpandaConsoleTopicCollector:
+    """Collects topic disk usage metrics from Redpanda Console API."""
+
     def __init__(self, redpanda_console_url):
+        """
+        Initialize the collector with the Redpanda Console URL.
+
+        Args:
+            redpanda_console_url (str): URL of the Redpanda Console
+        """
         self.redpanda_console_url = redpanda_console_url
         self.topic_disk_usage = Gauge(
-            "redpanda_topic_disk_usage_bytes", "Disk usage in bytes per topic", ["topic"]
+            "redpanda_topic_disk_usage_bytes",
+            "Disk usage in bytes per topic",
+            ["topic"]
         )
 
     def collect_metrics(self):
+        """Fetch and update metrics from the Redpanda Console API."""
         try:
             # Fetch topic list with data
-            topics_response = requests.get(f"{self.redpanda_console_url}/api/topics", timeout=10)
+            topics_response = requests.get(
+                f"{self.redpanda_console_url}/api/topics",
+                timeout=10
+            )
             if topics_response.status_code != 200:
                 logger.error(f"Failed to fetch topics: {topics_response.status_code}")
                 return
@@ -36,7 +60,7 @@ class RedpandaConsoleTopicCollector:
                 # Assume the response is a list of topics directly
                 topics = response_data
 
-            # For each topic, get partition sizes
+            # For each topic, get disk usage
             for topic in topics:
                 # Skip if not a dictionary or doesn't have a topic name
                 if not isinstance(topic, dict):
@@ -63,16 +87,43 @@ class RedpandaConsoleTopicCollector:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Redpanda Console Prometheus Exporter")
-    parser.add_argument(
-        "--console-url", type=str, required=True, help="URL of the Redpanda Console (e.g., http://localhost:8080)"
+    """
+    Parse command line arguments.
+    
+    Returns:
+        argparse.Namespace: The parsed arguments
+    """
+    parser = argparse.ArgumentParser(
+        description="Redpanda Console Prometheus Exporter"
     )
-    parser.add_argument("--port", type=int, default=8000, help="Port on which the exporter HTTP server will listen")
-    parser.add_argument("--interval", type=int, default=30, help="Interval in seconds between metrics collection")
+    parser.add_argument(
+        "--console-url",
+        type=str,
+        required=True,
+        help="URL of the Redpanda Console (e.g., http://localhost:8080)"
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port on which the exporter HTTP server will listen"
+    )
+    parser.add_argument(
+        "--interval",
+        type=int,
+        default=30,
+        help="Interval in seconds between metrics collection"
+    )
     return parser.parse_args()
 
 
 def main():
+    """
+    Main entry point for the exporter.
+    
+    Parses arguments, starts the HTTP server, and runs the
+    metrics collection loop.
+    """
     args = parse_args()
     logger.info(f"Starting Redpanda exporter with Redpanda Console URL: {args.console_url}")
 

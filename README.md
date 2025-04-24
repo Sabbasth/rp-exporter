@@ -167,6 +167,7 @@ This section documents the evolutionary steps that led to the current state of t
 | "Enlève l'option de pouvoir lancer le script localement pour garder uniquement le job kubernetes." | "Remove the option to run the script locally to keep only the Kubernetes job." | Simplified the implementation by removing local script execution option. Updated documentation and Makefile to reflect this change. |
 | "the rp-exporter app reports an error, fix it and redeploy only this service" | (Already in English) | Fixed the rp-exporter API integration issues by handling different API response formats and improving error handling. Redeployed only the fixed service. |
 | "Ajoute une section à la fin du readme avec l'ensemble des demandes que je t'ai faites, celle-ci incluse, ainsi que leur traduction en anglais le cas échéant." | "Add a section at the end of the readme with all the requests I've made to you, including this one, as well as their English translation if applicable." | Added this documentation section to track the project's evolution. |
+| "Fais un cleanup de l'ensemble du projet dont: maintien de la documentation, organisation des fichiers, suppression des reférences de code, libriaries ou autre inutiles, linting, retravailler les commits de la branche principale pour avoir une évolution cohérente. Si tu vois d'autres choses à modifier pour améliorer la lisibilité ou compréhension du projet fais-le. N'oublie d'ajouter cette demande à la section dédiée dans le readme." | "Clean up the entire project including: maintaining documentation, organizing files, removing unnecessary code references, libraries or other items, linting, reworking commits on the main branch to have a coherent evolution. If you see other things to modify to improve the readability or understanding of the project, do it. Don't forget to add this request to the dedicated section in the readme." | Performed a comprehensive cleanup of the project: improved code organization, added proper documentation, optimized imports, enhanced test coverage, updated package structure, and removed unused dependencies. |
 
 ### Architecture Overview
 
@@ -180,3 +181,38 @@ The project evolved from a simple deployment to a robust, namespace-isolated Kub
 6. A containerized topic generator running as a Kubernetes Job
 
 Each component now runs in a dedicated namespace with proper resource management and streamlined access via both port forwarding and NodePort services.
+
+### Project Structure
+
+The project is organized as follows:
+
+```
+rp-exporter/
+├── Dockerfile                  # Main application Dockerfile
+├── Makefile                    # Build and deployment automation
+├── README.md                   # Project documentation
+├── grafana/                    # Grafana configuration
+│   └── provisioning/           # Dashboard and datasource provisioning
+├── k8s/                        # Kubernetes manifests
+│   ├── grafana.yaml            # Grafana deployment
+│   ├── kafka.yaml              # Kafka cluster configuration
+│   ├── kustomization.yaml      # Kustomize configuration
+│   ├── namespace.yaml          # Namespace definition
+│   ├── prometheus.yaml         # Prometheus deployment
+│   ├── redpanda-console.yaml   # Redpanda Console deployment
+│   ├── rp-exporter.yaml        # Main exporter deployment
+│   ├── storage.yaml            # Storage configurations
+│   └── topic-generator.yaml    # Topic generator job
+├── prometheus/                 # Prometheus configuration
+│   └── prometheus.yml
+├── pyproject.toml              # Python project configuration
+├── requirements.txt            # Python dependencies
+├── setup.py                    # Package installation configuration
+├── src/                        # Application source code
+│   ├── __init__.py             # Package definition
+│   └── app.py                  # Main application code
+└── tests/                      # Test suite
+    ├── __init__.py
+    ├── generate_test_topics.py # Topic generation script
+    └── test_app.py             # Unit tests
+```
