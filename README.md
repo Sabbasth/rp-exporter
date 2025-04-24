@@ -82,11 +82,7 @@ The script creates:
 - Each topic is filled with test data
 - Topics have a retention size of 50 MB
 
-To run the script, you have two options:
-
-**Option 1: Run as a Kubernetes Job (Recommended)**
-
-This runs the topic generator directly inside the Kubernetes cluster, without requiring port forwarding:
+The topic generator runs as a Kubernetes Job directly inside the cluster:
 
 ```bash
 # Build and deploy the topic generator as a Kubernetes Job
@@ -94,18 +90,6 @@ make generate-topics
 
 # Check the job logs
 kubectl -n rp-exporter logs job/topic-generator -f
-```
-
-**Option 2: Run locally with port forwarding**
-
-This requires you to have port forwarding active:
-
-```bash
-# In one terminal, start port forwarding
-make port-forward
-
-# In another terminal, run the local generator script
-make generate-topics-local
 ```
 
 ### Available Services
@@ -163,7 +147,4 @@ make apply
 
 # Generate test topics inside the cluster
 make generate-topics
-
-# Generate test topics locally (requires port-forwarding)
-make generate-topics-local
 ```

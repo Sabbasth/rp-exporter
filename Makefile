@@ -78,14 +78,6 @@ test:
 build-topic-generator:
 	docker build -t topic-generator:latest -f tests/Dockerfile.topic-generator .
 
-# Generate test topics with random data using local script (requires port forwarding)
-generate-topics-local:
-	@echo "Generating test topics locally..."
-	@echo "Make sure port forwarding is running in another terminal with 'make port-forward'"
-	@echo "Waiting 5 seconds for port forwarding to stabilize..."
-	@sleep 5
-	KAFKA_BOOTSTRAP_SERVERS=localhost:9092 python tests/generate_test_topics.py
-
 # Generate test topics with random data using Kubernetes Job
 generate-topics: build-topic-generator load-topic-generator
 	@echo "Generating test topics in Kubernetes..."
@@ -143,8 +135,7 @@ help:
 	@echo "  build-all          - Build all Docker images"
 	@echo ""
 	@echo "Topic generator:"
-	@echo "  generate-topics    - Generate test topics using Kubernetes job (recommended)"
-	@echo "  generate-topics-local - Generate test topics locally (requires port-forwarding)"
+	@echo "  generate-topics    - Generate test topics using Kubernetes job"
 	@echo ""
 	@echo "Common:"
 	@echo "  test               - Run the test suite"
