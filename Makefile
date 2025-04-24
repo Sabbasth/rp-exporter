@@ -1,4 +1,4 @@
-.PHONY: run build test clean down generate-topics
+.PHONY: run build test clean down generate-topics restart-service
 
 # Default target
 all: build run
@@ -28,6 +28,15 @@ install:
 	pip install -r requirements.txt
 	pip install -e .
 
+# Restart a specific service
+restart-service:
+	@if [ -z "$(SERVICE)" ]; then \
+		echo "Usage: make restart-service SERVICE=<service-name>"; \
+		echo "Available services: rp-exporter, broker, redpanda-console, prometheus, grafana"; \
+		exit 1; \
+	fi
+	docker-compose restart $(SERVICE)
+
 # Clean up
 clean:
 	docker-compose down -v
@@ -45,6 +54,7 @@ help:
 	@echo "  test            - Run the test suite"
 	@echo "  generate-topics - Generate test topics with random data and fills them"
 	@echo "  install         - Install dependencies"
+	@echo "  restart-service - Restart a specific service (Usage: make restart-service SERVICE=<service-name>)"
 	@echo "  clean           - Remove containers, volumes and cache files"
 	@echo "  down            - Stop the local environment"
 	@echo "  all             - Build and run the application (default)"
