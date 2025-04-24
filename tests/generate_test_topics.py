@@ -42,7 +42,25 @@ def generate_random_data(size_kb):
 
 def create_random_topics():
     """Create random topics with random partitions and replication factors."""
-    admin_client = KafkaAdminClient(bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS)
+    print(f"Connecting to Kafka at {KAFKA_BOOTSTRAP_SERVERS}...")
+    
+    # Set client_id to avoid NodeNotReadyError
+    admin_client = KafkaAdminClient(
+        bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
+        client_id="topic-generator-admin",
+        # Add longer timeout to accommodate Kubernetes networking
+        request_timeout_ms=30000,
+        connections_max_idle_ms=60000
+    )
+
+    # Test the connection with list_topics before proceeding
+    try:
+        existing_topics = admin_client.list_topics()
+        print(f"Successfully connected to Kafka. Existing topics: {existing_topics}")
+    except Exception as e:
+        print(f"Error connecting to Kafka: {str(e)}")
+        admin_client.close()
+        raise
 
     num_topics = random.randint(1, MAX_TOPICS)
     topics = []
@@ -51,8 +69,9 @@ def create_random_topics():
 
     for _ in range(num_topics):
         topic_name = f"test-topic-{generate_random_string(5)}"
-        num_partitions = random.randint(MIN_PARTITIONS, MAX_PARTITIONS)
-        replication_factor = random.randint(MIN_REPLICATION, MAX_REPLICATION)
+        # Set fixed values to avoid issues with cluster size
+        num_partitions = MIN_PARTITIONS
+        replication_factor = 1  # Set to 1 for more reliable creation
 
         # Topic configurations including retention.bytes (50 MB)
         topic_configs = {
@@ -79,6 +98,10 @@ def create_random_topics():
             )
     except TopicAlreadyExistsError as e:
         print(f"Some topics already exist: {e}")
+    except Exception as e:
+        print(f"Error creating topics: {str(e)}")
+        admin_client.close()
+        raise
     finally:
         admin_client.close()
 
@@ -87,8 +110,17 @@ def create_random_topics():
 
 def send_messages_to_topics(topic_names):
     """Send random messages to topics until they reach the desired size."""
+    print(f"Connecting producer to Kafka at {KAFKA_BOOTSTRAP_SERVERS}...")
     producer = KafkaProducer(
-        bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS, value_serializer=lambda x: json.dumps(x).encode("utf-8")
+        bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS, 
+        value_serializer=lambda x: json.dumps(x).encode("utf-8"),
+        client_id="topic-generator-producer",
+        # Add configurations to improve connectivity in Kubernetes
+        request_timeout_ms=30000,
+        connections_max_idle_ms=60000,
+        retry_backoff_ms=500,
+        reconnect_backoff_max_ms=5000,
+        reconnect_backoff_ms=1000
     )
 
     for topic_name in topic_names:
@@ -152,6 +184,24 @@ def main():
     print(f"  - Retention size: {MAX_RETENTION_SIZE_MB} MB")
     print()
 
+    # Try to establish initial connection to check connectivity
+    print("Testing connection to Kafka...")
+    try:
+        from kafka.client_async import KafkaClient
+        client = KafkaClient(
+            bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
+            client_id="connection-test",
+            request_timeout_ms=10000
+        )
+        client.check_version()
+        print("Initial connectivity test successful!")
+        client.close()
+    except Exception as connection_error:
+        print(f"WARNING: Initial connection test failed: {str(connection_error)}")
+        print("Will still attempt to proceed with topic creation...")
+        print("If this fails, ensure Kafka is running and port-forwarding is active.")
+        time.sleep(2)  # Pause to let user read the warning
+        
     try:
         # Create topics
         topic_names = create_random_topics()
@@ -170,6 +220,10 @@ def main():
         print(f"An error occurred: {str(e)}")
         print(f"Make sure Kafka is accessible at {KAFKA_BOOTSTRAP_SERVERS}")
         print("If using port forwarding, ensure 'make port-forward' is running in another terminal")
+        print("You can try:")
+        print("  1. Ensure port 9092 is correctly forwarded from the Kubernetes cluster")
+        print("  2. Check that the Kafka service is running: kubectl get pods -n rp-exporter")
+        print("  3. Verify port-forwarding is active with: kubectl port-forward svc/kafka 9092:9092 -n rp-exporter")
 
 
 if __name__ == "__main__":
