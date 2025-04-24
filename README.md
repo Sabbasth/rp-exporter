@@ -54,10 +54,12 @@ make build
 make apply
 
 # Forward ports to access services locally
+# Keep this command running in a terminal
 make port-forward
 
-# Restart a specific service
+# In another terminal, restart a specific service if needed
 make restart-service SERVICE=rp-exporter
+# Other services: grafana, kafka, prometheus, redpanda-console
 ```
 
 #### Stopping the Environment
@@ -94,6 +96,10 @@ python tests/generate_test_topics.py
 
 ### Available Services
 
+The services are available in two ways:
+
+**Option 1: Using Port Forwarding (Recommended)**
+
 When port forwarding is set up with `make port-forward`, the following services are available:
 
 - Redpanda Console: [http://localhost:8080](http://localhost:8080)
@@ -101,6 +107,17 @@ When port forwarding is set up with `make port-forward`, the following services 
 - Grafana: [http://localhost:3000](http://localhost:3000) (admin/admin)
 - Redpanda Exporter: [http://localhost:8000/metrics](http://localhost:8000/metrics)
 - Kafka: localhost:9092
+
+> **Note:** To access these services from your host machine, run `make port-forward` in a terminal and keep it running. This command establishes port forwarding from your Kubernetes services to your localhost. Press Ctrl+C to stop port forwarding when done.
+
+**Option 2: Using NodePort Services**
+
+Alternatively, the services are also exposed via NodePort:
+
+- Redpanda Console: http://localhost:30808
+- Prometheus: http://localhost:30909
+- Grafana: http://localhost:30300 (admin/admin)
+- Redpanda Exporter: http://localhost:30800/metrics
 
 ### Makefile Options
 

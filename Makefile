@@ -25,8 +25,12 @@ load-image:
 	elif command -v kind >/dev/null 2>&1; then \
 		echo "Loading image into Kind..."; \
 		kind load docker-image rp-exporter:latest; \
+	elif command -v docker >/dev/null 2>&1 && docker info 2>/dev/null | grep -q "Kubernetes"; then \
+		echo "Docker Desktop with Kubernetes detected. Image will be available automatically."; \
+	elif command -v kubectl >/dev/null 2>&1 && kubectl config current-context | grep -q "rancher-desktop"; then \
+		echo "Rancher Desktop detected. Image will be available automatically."; \
 	else \
-		echo "Neither Minikube nor Kind detected. Skipping image load."; \
+		echo "No recognized Kubernetes environment detected. Skipping image load."; \
 	fi
 
 # Port forward Kubernetes services to localhost
@@ -37,17 +41,21 @@ port-forward:
 	kubectl -n $(NAMESPACE) port-forward svc/prometheus 9090:9090 & \
 	kubectl -n $(NAMESPACE) port-forward svc/grafana 3000:3000 & \
 	kubectl -n $(NAMESPACE) port-forward svc/rp-exporter 8000:8000 & \
-	kubectl -n $(NAMESPACE) port-forward svc/broker 9092:9092 & \
+	kubectl -n $(NAMESPACE) port-forward svc/kafka 9092:9092 & \
 	wait
 
 # Restart a service in Kubernetes
 restart-service:
 	@if [ -z "$(SERVICE)" ] || [ "$(SERVICE)" = "none" ]; then \
 		echo "Usage: make restart-service SERVICE=<service-name>"; \
-		echo "Available services: rp-exporter, broker, redpanda-console, prometheus, grafana"; \
+		echo "Available services: rp-exporter, kafka, redpanda-console, prometheus, grafana"; \
 		exit 1; \
 	fi
-	kubectl -n $(NAMESPACE) rollout restart deployment/$(SERVICE)
+	@if [ "$(SERVICE)" = "kafka" ]; then \
+		kubectl -n $(NAMESPACE) rollout restart statefulset/kafka; \
+	else \
+		kubectl -n $(NAMESPACE) rollout restart deployment/$(SERVICE); \
+	fi
 
 # Run the local environment
 run: apply

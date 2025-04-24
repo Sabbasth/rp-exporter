@@ -5,10 +5,10 @@ metadata:
 data:
   config.yaml: |
     kafka:
-      brokers: ["kafka-0.kafka-headless:9092", "kafka-1.kafka-headless:9092", "kafka-2.kafka-headless:9092"]
+      brokers: ["kafka.rp-exporter.svc.cluster.local:9092"]
     redpanda:
       adminApi:
-        enabled: true
+        enabled: false
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -30,6 +30,11 @@ spec:
         ports:
         - containerPort: 8080
         - containerPort: 9644
+        env:
+        - name: CONFIG_FILEPATH
+          value: /etc/redpanda/console/config.yaml
+        - name: KAFKA_BROKERS
+          value: kafka.rp-exporter.svc.cluster.local:9092
         volumeMounts:
         - name: config
           mountPath: /etc/redpanda/console
@@ -49,6 +54,8 @@ spec:
   - name: http
     port: 8080
     targetPort: 8080
+    nodePort: 30808
   - name: admin
     port: 9644
     targetPort: 9644
+  type: NodePort
