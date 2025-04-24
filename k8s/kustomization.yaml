@@ -11,3 +11,4 @@ resources:
   - rp-exporter.yaml
   - prometheus.yaml
   - grafana.yaml
+  - topic-generator.yaml

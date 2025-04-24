@@ -77,21 +77,35 @@ The repository includes a script to generate test topics with random data. This 
 The script creates:
 
 - Up to 4 topics with random names
-- Between 2-10 partitions per topic
-- Replication factor between 1-3
-- Each topic is filled with 40-80 MB of random data
+- A configurable number of partitions per topic
+- Configurable replication factor
+- Each topic is filled with test data
 - Topics have a retention size of 50 MB
 
-To run the script:
+To run the script, you have two options:
+
+**Option 1: Run as a Kubernetes Job (Recommended)**
+
+This runs the topic generator directly inside the Kubernetes cluster, without requiring port forwarding:
 
 ```bash
+# Build and deploy the topic generator as a Kubernetes Job
 make generate-topics
+
+# Check the job logs
+kubectl -n rp-exporter logs job/topic-generator -f
 ```
 
-Or directly:
+**Option 2: Run locally with port forwarding**
+
+This requires you to have port forwarding active:
 
 ```bash
-python tests/generate_test_topics.py
+# In one terminal, start port forwarding
+make port-forward
+
+# In another terminal, run the local generator script
+make generate-topics-local
 ```
 
 ### Available Services
@@ -130,4 +144,26 @@ For a complete list of available commands:
 
 ```bash
 make help
+```
+
+Key commands include:
+
+```bash
+# Build all Docker images
+make build-all
+
+# Build only the main application
+make build
+
+# Build only the topic generator
+make build-topic-generator
+
+# Apply all Kubernetes manifests with both images
+make apply
+
+# Generate test topics inside the cluster
+make generate-topics
+
+# Generate test topics locally (requires port-forwarding)
+make generate-topics-local
 ```
